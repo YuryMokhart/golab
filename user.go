@@ -11,9 +11,9 @@ import(
 )
 
 type user struct {
-	ID int64 `json:"ID" bson:"ID"`
-	Name string `json:"Name "bson:"Name"`
-	Balance int64
+	ID int64 `json:"_id" bson:"_id"`
+	Name string `json:"name" "bson:"name"`
+	Balance int64 `json:"balance" "bson:"balance"`
 }
 
 func main() {
@@ -48,7 +48,7 @@ func main() {
 	}
 	fmt.Println("Inserted document: ", insertResult.InsertedID)
 
-	filter := bson.D{{"Name", "NameUser1"}}
+	filter := bson.D{{"name", "NameUser1"}}
 
 	var result user
 
