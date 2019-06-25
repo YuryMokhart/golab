@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -19,18 +20,17 @@ type user struct {
 	Balance string             `json:"balance" bson:"balance"`
 }
 
-// TODO: rewrite everything using REST API architecture.
-// TODO: don't write real long functions! Start readind Robert Martin: Clean code.
 func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/user", createUser).Methods(http.MethodPost)
-	r.HandleFunc("/users", getUsers).Methods(http.MethodGet)
+	r.HandleFunc("/users", printUsers).Methods(http.MethodGet)
+	r.HandleFunc("/user/{id}", findUser).Methods(http.MethodGet)
+	r.HandleFunc("/user/{id}", deleteUser).Methods(http.MethodDelete)
 	http.ListenAndServe(":8080", r)
+
 }
 
-// TODO: remove all the copy-paste code, find similar code and create new helper funcs.
-// TODO: read about naming convention. https://golang.org/doc/effective_go.html#Getters
-func getUsers(w http.ResponseWriter, r *http.Request) {
+func printUsers(w http.ResponseWriter, r *http.Request) {
 	var users []user
 	w.Header().Set("Content-Type", "application/json")
 	client, _ := dbConnector()
@@ -39,27 +39,23 @@ func getUsers(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	cursor, err := collection.Find(ctx, bson.M{})
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{ "could not find users. Error: "` + err.Error() + `" }`))
-		return
+		errorHelper(w, err, "could not find users. Error: ")
 	}
 	defer cursor.Close(ctx)
 	for cursor.Next(ctx) {
 		var oneUser user
 		err = cursor.Decode(&oneUser)
 		if err != nil {
-			log.Fatalf("could not decode into oneUser in getUsers(): %s\n", err)
+			log.Fatalf("could not decode into oneUser in printUsers(): %s\n", err)
 		}
 		users = append(users, oneUser)
 	}
 	if err = cursor.Err(); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{ "cursor error message: "` + err.Error() + `" }`))
-		return
+		errorHelper(w, err, "cursor error message: ")
 	}
 	err = json.NewEncoder(w).Encode(users)
 	if err != nil {
-		log.Fatalf("could not encode users in getUsers(): %s\n", err)
+		log.Fatalf("could not encode users in printUsers(): %s\n", err)
 	}
 }
 
@@ -72,11 +68,53 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 		log.Fatalf("could not decode into oneUser in createUser(): %s\n", err)
 	}
 	collection := client.Database("tournament").Collection("user")
-	ctx := context.Background()
-	result, _ := collection.InsertOne(ctx, oneUser)
+	ctx := r.Context()
+	result, err := collection.InsertOne(ctx, oneUser)
+	if err != nil {
+		errorHelper(w, err, "could not insert user: ")
+	}
 	err = json.NewEncoder(w).Encode(result)
 	if err != nil {
 		log.Fatalf("could not decode oneUser into val in createUser(): %s\n", err)
+	}
+}
+
+func findUser(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	client, _ := dbConnector()
+	ctx := r.Context()
+	collection := client.Database("tournament").Collection("user")
+	vars := mux.Vars(r)
+	fmt.Println("vars = ", vars)
+	id, err := primitive.ObjectIDFromHex(vars["id"])
+	if err != nil {
+		errorHelper(w, err, "hex string is not valid ObjectID: ")
+	}
+	var oneUser user
+	idDoc := bson.D{{"_id", id}}
+	fmt.Println("iddoc = ", idDoc)
+	res := collection.FindOne(ctx, idDoc)
+	fmt.Println("result = ", res)
+	err = res.Decode(&oneUser)
+	if err != nil {
+		errorHelper(w, err, "could not find specific user: ")
+	}
+}
+
+func deleteUser(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	client, _ := dbConnector()
+	ctx := r.Context()
+	collection := client.Database("tournament").Collection("user")
+	vars := mux.Vars(r)
+	id, err := primitive.ObjectIDFromHex(vars["id"])
+	if err != nil {
+		errorHelper(w, err, "hex string is not valid ObjectID: ")
+	}
+	idDoc := bson.D{{"_id", id}}
+	_, err = collection.DeleteOne(ctx, idDoc)
+	if err != nil {
+		errorHelper(w, err, "could not delete specific user: ")
 	}
 }
 
@@ -95,4 +133,10 @@ func dbConnector() (*mongo.Client, error) {
 		log.Fatalf("could not ping: %s\n", err)
 	}
 	return client, nil
+}
+
+func errorHelper(w http.ResponseWriter, err error, message string) {
+	w.WriteHeader(http.StatusInternalServerError)
+	w.Write([]byte(`{ ` + message + ` ` + err.Error() + `" }`))
+	return
 }
