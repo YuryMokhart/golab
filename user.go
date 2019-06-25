@@ -1,71 +1,142 @@
 package main
 
-import(
+import (
+	"context"
+	"encoding/json"
 	"fmt"
+	"log"
+	"net/http"
+
+	"github.com/gorilla/mux"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/bson"
-	"context"
-	// "time"
-	"log"
 )
 
 type user struct {
-	ID int64 `json:"_id" bson:"_id"`
-	Name string `json:"name" "bson:"name"`
-	Balance int64 `json:"balance" "bson:"balance"`
+	ID      primitive.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
+	Name    string             `json:"name" bson:"name"`
+	Balance string             `json:"balance" bson:"balance"`
 }
 
 func main() {
+	r := mux.NewRouter()
+	r.HandleFunc("/user", createUser).Methods(http.MethodPost)
+	r.HandleFunc("/users", printUsers).Methods(http.MethodGet)
+	r.HandleFunc("/user/{id}", findUser).Methods(http.MethodGet)
+	r.HandleFunc("/user/{id}", deleteUser).Methods(http.MethodDelete)
+	http.ListenAndServe(":8080", r)
+
+}
+
+func printUsers(w http.ResponseWriter, r *http.Request) {
+	var users []user
+	w.Header().Set("Content-Type", "application/json")
+	client, _ := dbConnector()
+
+	collection := client.Database("tournament").Collection("user")
+	ctx := r.Context()
+	cursor, err := collection.Find(ctx, bson.M{})
+	if err != nil {
+		errorHelper(w, err, "could not find users. Error: ")
+	}
+	defer cursor.Close(ctx)
+	for cursor.Next(ctx) {
+		var oneUser user
+		err = cursor.Decode(&oneUser)
+		if err != nil {
+			log.Fatalf("could not decode into oneUser in printUsers(): %s\n", err)
+		}
+		users = append(users, oneUser)
+	}
+	if err = cursor.Err(); err != nil {
+		errorHelper(w, err, "cursor error message: ")
+	}
+	err = json.NewEncoder(w).Encode(users)
+	if err != nil {
+		log.Fatalf("could not encode users in printUsers(): %s\n", err)
+	}
+}
+
+func createUser(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	client, _ := dbConnector()
+	var oneUser user
+	err := json.NewDecoder(r.Body).Decode(&oneUser)
+	if err != nil {
+		log.Fatalf("could not decode into oneUser in createUser(): %s\n", err)
+	}
+	collection := client.Database("tournament").Collection("user")
+	ctx := r.Context()
+	result, err := collection.InsertOne(ctx, oneUser)
+	if err != nil {
+		errorHelper(w, err, "could not insert user: ")
+	}
+	err = json.NewEncoder(w).Encode(result)
+	if err != nil {
+		log.Fatalf("could not decode oneUser into val in createUser(): %s\n", err)
+	}
+}
+
+func findUser(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	client, _ := dbConnector()
+	ctx := r.Context()
+	collection := client.Database("tournament").Collection("user")
+	vars := mux.Vars(r)
+	fmt.Println("vars = ", vars)
+	id, err := primitive.ObjectIDFromHex(vars["id"])
+	if err != nil {
+		errorHelper(w, err, "hex string is not valid ObjectID: ")
+	}
+	var oneUser user
+	idDoc := bson.D{{"_id", id}}
+	fmt.Println("iddoc = ", idDoc)
+	res := collection.FindOne(ctx, idDoc)
+	fmt.Println("result = ", res)
+	err = res.Decode(&oneUser)
+	if err != nil {
+		errorHelper(w, err, "could not find specific user: ")
+	}
+}
+
+func deleteUser(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	client, _ := dbConnector()
+	ctx := r.Context()
+	collection := client.Database("tournament").Collection("user")
+	vars := mux.Vars(r)
+	id, err := primitive.ObjectIDFromHex(vars["id"])
+	if err != nil {
+		errorHelper(w, err, "hex string is not valid ObjectID: ")
+	}
+	idDoc := bson.D{{"_id", id}}
+	_, err = collection.DeleteOne(ctx, idDoc)
+	if err != nil {
+		errorHelper(w, err, "could not delete specific user: ")
+	}
+}
+
+func dbConnector() (*mongo.Client, error) {
 	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://localhost:27017"))
 	if err != nil {
 		log.Fatalf("could not connect mongoDB to a new client: %s\n", err)
-	} 
-
+	}
 	ctx := context.Background()
-	// ctx1, close := context.WithTimeout(ctx, 1*time.Second)
-	// defer close()
-
 	err = client.Connect(ctx)
 	if err != nil {
 		log.Fatalf("could not initialise the client: %s\n", err)
 	}
 	err = client.Ping(ctx, nil)
 	if err != nil {
-		log.Fatalf("could not ping the client: %s\n", err)
+		log.Fatalf("could not ping: %s\n", err)
 	}
+	return client, nil
+}
 
-	collection := client.Database("tournament").Collection("user")
-
-	user1 := user {
-		ID: 1, 
-		Name: "NameUser1", 
-		Balance: 15,
-	}
-	insertResult, err := collection.InsertOne(ctx, user1)
-	if err != nil {
-	    log.Fatalf("could not insert a user into collection: %s\n", err)
-	}
-	fmt.Println("Inserted document: ", insertResult.InsertedID)
-
-	filter := bson.D{{"name", "NameUser1"}}
-
-	var result user
-
-	err = collection.FindOne(ctx, filter).Decode(&result)
-	if err != nil {
-	    log.Fatalf("could not find a user in the collection: %s\n", err)
-	}
-	fmt.Printf("Found a single document: %+v\n", result)
-
-	deleteResult, err := collection.DeleteOne(ctx, filter)
-	if err != nil {
-		log.Fatalf("could not delete a user from the collection: %s\n", err)
-	}
-	fmt.Printf("Deleted document: %v\n", deleteResult)
-
-	err = client.Disconnect(ctx)
-	if err != nil {
-		log.Fatalf("could not dsconnect: %s\n", err)
-	}
+func errorHelper(w http.ResponseWriter, err error, message string) {
+	w.WriteHeader(http.StatusInternalServerError)
+	w.Write([]byte(`{ ` + message + ` ` + err.Error() + `" }`))
+	return
 }
