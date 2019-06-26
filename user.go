@@ -30,72 +30,76 @@ func main() {
 }
 
 func printUsers(w http.ResponseWriter, r *http.Request) {
-	var users []user
 	w.Header().Set("Content-Type", "application/json")
-	client, _ := dbConnector()
-
-	collection := client.Database("tournament").Collection("user")
+	collection := dbConnector("tournament", "user")
 	ctx := r.Context()
 	cursor, err := collection.Find(ctx, bson.M{})
 	if err != nil {
 		errorHelper(w, err, "could not find users. Error: ")
 	}
 	defer cursor.Close(ctx)
-	for cursor.Next(ctx) {
-		var oneUser user
-		err = cursor.Decode(&oneUser)
-		if err != nil {
-			log.Fatalf("could not decode into oneUser in printUsers(): %s\n", err)
-		}
-		users = append(users, oneUser)
-	}
-	if err = cursor.Err(); err != nil {
-		errorHelper(w, err, "cursor error message: ")
-	}
+	users := usersRetriever(ctx, cursor, w)
 	err = json.NewEncoder(w).Encode(users)
 	if err != nil {
 		log.Fatalf("could not encode users in printUsers(): %s\n", err)
 	}
 }
 
+func usersRetriever(ctx context.Context, cursor *mongo.Cursor, w http.ResponseWriter) []user {
+	var users []user
+	for cursor.Next(ctx) {
+		var oneUser user
+		err := cursor.Decode(&oneUser)
+		if err != nil {
+			errorHelper(w, err, "could not decode into oneUser in printUsers(): ")
+		}
+		users = append(users, oneUser)
+	}
+	if err := cursor.Err(); err != nil {
+		errorHelper(w, err, "cursor error message: ")
+	}
+	return users
+}
+
 func createUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	client, _ := dbConnector()
+	collection := dbConnector("tournament", "user")
 	var oneUser user
 	err := json.NewDecoder(r.Body).Decode(&oneUser)
 	if err != nil {
 		errorHelper(w, err, "could not decode into oneUser in createUser(): ")
+		return
 	}
-	collection := client.Database("tournament").Collection("user")
 	ctx := r.Context()
 	result, err := collection.InsertOne(ctx, oneUser)
 	if err != nil {
 		errorHelper(w, err, "could not insert user: ")
+		return
 	}
 	err = json.NewEncoder(w).Encode(result)
 	if err != nil {
 		errorHelper(w, err, "could not encode oneUser in createUser(): ")
+		return
 	}
 }
 
 func findUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	client, _ := dbConnector()
-	ctx := r.Context()
-	collection := client.Database("tournament").Collection("user")
+	collection := dbConnector("tournament", "user")
 	vars := mux.Vars(r)
 	id, err := primitive.ObjectIDFromHex(vars["id"])
 	if err != nil {
 		errorHelper(w, err, "hex string is not valid ObjectID: ")
 		return
 	}
-	var oneUser user
+	ctx := r.Context()
 	idDoc := bson.M{"_id": id}
 	res := collection.FindOne(ctx, idDoc)
 	if res.Err() != nil {
 		errorHelper(w, err, "could not find specific user: ")
 		return
 	}
+	var oneUser user
 	err = res.Decode(&oneUser)
 	if err != nil {
 		errorHelper(w, err, "could not decode specific user: ")
@@ -106,22 +110,23 @@ func findUser(w http.ResponseWriter, r *http.Request) {
 
 func deleteUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	client, _ := dbConnector()
-	ctx := r.Context()
-	collection := client.Database("tournament").Collection("user")
+	collection := dbConnector("tournament", "user")
 	vars := mux.Vars(r)
 	id, err := primitive.ObjectIDFromHex(vars["id"])
 	if err != nil {
 		errorHelper(w, err, "hex string is not valid ObjectID: ")
+		return
 	}
+	ctx := r.Context()
 	idDoc := bson.M{"_id": id}
 	_, err = collection.DeleteOne(ctx, idDoc)
 	if err != nil {
 		errorHelper(w, err, "could not delete specific user: ")
+		return
 	}
 }
 
-func dbConnector() (*mongo.Client, error) {
+func dbConnector(db string, col string) *mongo.Collection {
 	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://localhost:27017"))
 	if err != nil {
 		log.Fatalf("could not connect mongoDB to a new client: %s\n", err)
@@ -135,7 +140,8 @@ func dbConnector() (*mongo.Client, error) {
 	if err != nil {
 		log.Fatalf("could not ping: %s\n", err)
 	}
-	return client, nil
+	collection := client.Database(db).Collection(col)
+	return collection
 }
 
 func errorHelper(w http.ResponseWriter, err error, message string) {
