@@ -64,7 +64,7 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 	var oneUser user
 	err := json.NewDecoder(r.Body).Decode(&oneUser)
 	if err != nil {
-		log.Fatalf("could not decode into oneUser in createUser(): %s\n", err)
+		errorHelper(w, err, "could not decode into oneUser in createUser(): ")
 	}
 	collection := client.Database("tournament").Collection("user")
 	ctx := r.Context()
@@ -74,7 +74,7 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 	}
 	err = json.NewEncoder(w).Encode(result)
 	if err != nil {
-		log.Fatalf("could not decode oneUser into val in createUser(): %s\n", err)
+		errorHelper(w, err, "could not encode oneUser in createUser(): ")
 	}
 }
 
@@ -90,10 +90,7 @@ func findUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var oneUser user
-	idDoc := bson.D{{
-		Key:   "_id",
-		Value: id,
-	}}
+	idDoc := bson.M{"_id": id}
 	res := collection.FindOne(ctx, idDoc)
 	if res.Err() != nil {
 		errorHelper(w, err, "could not find specific user: ")
