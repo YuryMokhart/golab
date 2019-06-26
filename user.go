@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -85,20 +84,27 @@ func findUser(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	collection := client.Database("tournament").Collection("user")
 	vars := mux.Vars(r)
-	fmt.Println("vars = ", vars)
 	id, err := primitive.ObjectIDFromHex(vars["id"])
 	if err != nil {
 		errorHelper(w, err, "hex string is not valid ObjectID: ")
+		return
 	}
 	var oneUser user
-	idDoc := bson.D{{"_id", id}}
-	fmt.Println("iddoc = ", idDoc)
+	idDoc := bson.D{{
+		Key:   "_id",
+		Value: id,
+	}}
 	res := collection.FindOne(ctx, idDoc)
-	fmt.Println("result = ", res)
+	if res.Err() != nil {
+		errorHelper(w, err, "could not find specific user: ")
+		return
+	}
 	err = res.Decode(&oneUser)
 	if err != nil {
-		errorHelper(w, err, "could not find specific user: ")
+		errorHelper(w, err, "could not decode specific user: ")
+		return
 	}
+	err = json.NewEncoder(w).Encode(oneUser)
 }
 
 func deleteUser(w http.ResponseWriter, r *http.Request) {
@@ -111,7 +117,7 @@ func deleteUser(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		errorHelper(w, err, "hex string is not valid ObjectID: ")
 	}
-	idDoc := bson.D{{"_id", id}}
+	idDoc := bson.M{"_id": id}
 	_, err = collection.DeleteOne(ctx, idDoc)
 	if err != nil {
 		errorHelper(w, err, "could not delete specific user: ")
