@@ -8,7 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func DBConnect() *mongo.Collection {
+func DBConnect() (*mongo.Database, *mongo.Collection) {
 	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://localhost:27017"))
 	if err != nil {
 		log.Fatalf("could not connect mongoDB to a new client: %s\n", err)
@@ -24,6 +24,7 @@ func DBConnect() *mongo.Collection {
 	}
 	var db = "tournament"
 	var col = "user"
-	collection := client.Database(db).Collection(col)
-	return collection
+	database := client.Database(db)
+	collection := database.Collection(col)
+	return database, collection
 }
