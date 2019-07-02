@@ -10,10 +10,10 @@ import (
 
 func main() {
 	db, col := model.DBConnect()
-	_ = model.NewMongoDB(db, col)
+	c := controller.HTTPController(db, col)
 	r := mux.NewRouter()
-	r.HandleFunc("/users", controller.PrintUsers).Methods(http.MethodGet)
-	r.HandleFunc("/user", controller.CreateUser).Methods(http.MethodPost)
+	r.HandleFunc("/users", c.PrintUsers).Methods(http.MethodGet)
+	r.HandleFunc("/user", c.CreateUser).Methods(http.MethodPost)
 	// r.HandleFunc("/user/{id}", controller.FindUser).Methods(http.MethodGet)
 	// r.HandleFunc("/user/{id}", controller.DeleteUser).Methods(http.MethodDelete)
 	http.ListenAndServe(":8080", r)

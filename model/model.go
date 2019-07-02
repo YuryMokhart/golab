@@ -3,26 +3,20 @@ package model
 import (
 	"context"
 
+	"github.com/YuryMokhart/golab/controller"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type UseMongoDB struct {
-	db         *mongo.Database
-	collection *mongo.Collection
+	DB         *mongo.Database
+	Collection *mongo.Collection
 }
 
-// func NewMongoDB(db *mongo.Database, collection *mongo.Collection) *UseMongoDB {
-// 	return &UseMongoDB{
-// 		db:         db,
-// 		collection: collection,
-// 	}
-// }
-
 //PrintUsers gets all users.
-func (um *UseMongoDB) PrintUsers(users Users) Users {
+func (c controller.HTTPController) PrintUsers(users Users) Users {
 	ctx := context.Background()
-	cursor, err := um.collection.Find(ctx, bson.M{})
+	cursor, err := c.Collection.Find(ctx, bson.M{})
 	if err != nil {
 		//controller.ErrorHelper(w, err, "could not find users. Error: ")
 	}
@@ -31,7 +25,7 @@ func (um *UseMongoDB) PrintUsers(users Users) Users {
 	return users
 }
 
-//RetrieveUsers retrieves a users and return them.
+//RetrieveUsers retrieves users and return them.
 func RetrieveUsers(ctx context.Context, cursor *mongo.Cursor) Users {
 	var users Users
 	for cursor.Next(ctx) {
@@ -49,9 +43,9 @@ func RetrieveUsers(ctx context.Context, cursor *mongo.Cursor) Users {
 }
 
 //CreateUser creates a user.
-func (um *UseMongoDB) CreateUser(user User) *mongo.InsertOneResult {
+func (c HTTPController) CreateUser(user User) *mongo.InsertOneResult {
 	ctx := context.Background()
-	result, err := um.collection.InsertOne(ctx, user)
+	result, err := c.Collection.InsertOne(ctx, user)
 	if err != nil {
 		//controller.ErrorHelper(w, err, "could not insert user: ")
 		//return
