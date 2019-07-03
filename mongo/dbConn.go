@@ -1,4 +1,4 @@
-package model
+package mongo
 
 import (
 	"context"
@@ -8,7 +8,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func DBConnect() (*mongo.Database, *mongo.Collection) {
+// DBConnect connects to the database.
+func DBConnect() *mongo.Collection {
 	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://localhost:27017"))
 	if err != nil {
 		log.Fatalf("could not connect mongoDB to a new client: %s\n", err)
@@ -22,9 +23,6 @@ func DBConnect() (*mongo.Database, *mongo.Collection) {
 	if err != nil {
 		log.Fatalf("could not ping: %s\n", err)
 	}
-	var db = "tournament"
-	var col = "user"
-	database := client.Database(db)
-	collection := database.Collection(col)
-	return database, collection
+	collection := client.Database("tournament").Collection("user")
+	return collection
 }
