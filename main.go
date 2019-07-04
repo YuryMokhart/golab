@@ -4,11 +4,11 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/YuryMokhart/golab/handler"
+	"github.com/YuryMokhart/golab/handlers"
 )
 
 func main() {
-	r, err := handler.Handle()
+	r, err := handlers.Router()
 	if err != nil {
 		log.Fatal(err)
 	}
