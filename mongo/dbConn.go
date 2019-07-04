@@ -3,6 +3,7 @@ package mongo
 import (
 	"context"
 	"log"
+	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -14,7 +15,8 @@ func DBConnect() *mongo.Collection {
 	if err != nil {
 		log.Fatalf("could not connect mongoDB to a new client: %s\n", err)
 	}
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
 	err = client.Connect(ctx)
 	if err != nil {
 		log.Fatalf("could not initialise the client: %s\n", err)

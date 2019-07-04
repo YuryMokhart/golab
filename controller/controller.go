@@ -27,7 +27,10 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		ErrorHelper(w, err, "couldn't encode user in createUser")
 		return
 	}
-	result := mongo.CreateUser(&user)
+	result, err := mongo.CreateUser(&user)
+	if err != nil {
+		return
+	}
 	err = json.NewEncoder(w).Encode(result)
 	if err != nil {
 		ErrorHelper(w, err, "could not encode oneUser in createUser(): ")
@@ -44,7 +47,10 @@ func PrintUsers(w http.ResponseWriter, r *http.Request) {
 		ErrorHelper(w, err, "couldn't encode users in printUsers")
 		return
 	}
-	users = mongo.PrintUsers()
+	users, err = mongo.PrintUsers()
+	if err != nil {
+		return
+	}
 	err = json.NewEncoder(w).Encode(users)
 	if err != nil {
 		ErrorHelper(w, err, "couldn't encode users in printUsers")
@@ -61,7 +67,7 @@ func FindUser(w http.ResponseWriter, r *http.Request) {
 		ErrorHelper(w, err, "hex string is not valid ObjectID: ")
 		return
 	}
-	user := mongo.FindUser(id)
+	user, err := mongo.FindUser(id)
 	err = json.NewEncoder(w).Encode(user)
 	if err != nil {
 		ErrorHelper(w, err, "couldn't encode users in findUsers")
@@ -78,5 +84,8 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 		ErrorHelper(w, err, "hex string is not valid ObjectID: ")
 		return
 	}
-	mongo.DeleteUser(id)
+	err = mongo.DeleteUser(id)
+	if err != nil {
+		return
+	}
 }

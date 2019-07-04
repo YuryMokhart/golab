@@ -1,18 +1,19 @@
 package main
 
 import (
+	"log"
 	"net/http"
 
-	"github.com/YuryMokhart/golab/controller"
-	"github.com/gorilla/mux"
+	"github.com/YuryMokhart/golab/handler"
 )
 
 func main() {
-	r := mux.NewRouter()
-	r.HandleFunc("/users", controller.PrintUsers).Methods(http.MethodGet)
-	r.HandleFunc("/user", controller.CreateUser).Methods(http.MethodPost)
-	r.HandleFunc("/user/{id}", controller.FindUser).Methods(http.MethodGet)
-	r.HandleFunc("/user/{id}", controller.DeleteUser).Methods(http.MethodDelete)
-	http.ListenAndServe(":8080", r)
-
+	r, err := handler.Handle()
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = http.ListenAndServe(":8080", r)
+	if err != nil {
+		log.Fatal(err)
+	}
 }

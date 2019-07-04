@@ -2,6 +2,7 @@ package mongo
 
 import (
 	"context"
+	"time"
 
 	"github.com/YuryMokhart/golab/entity"
 	"go.mongodb.org/mongo-driver/bson"
@@ -10,81 +11,83 @@ import (
 )
 
 type mongoModeller interface {
-	CreateUser(entity.User) *mongo.InsertOneResult
-	PrintUsers() entity.Users
-	FindUser(primitive.ObjectID) entity.User
-	DeleteUser(primitive.ObjectID)
+	CreateUser(entity.User) (*mongo.InsertOneResult, error)
+	PrintUsers() (entity.Users, error)
+	FindUser(primitive.ObjectID) (entity.User, error)
+	DeleteUser(primitive.ObjectID) error
 }
 
 // CreateUser creates a user.
-func CreateUser(user *entity.User) *mongo.InsertOneResult {
+func CreateUser(user *entity.User) (*mongo.InsertOneResult, error) {
 	collection := DBConnect()
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
 	result, err := collection.InsertOne(ctx, user)
 	if err != nil {
-		// controller.ErrorHelper(w, err, "could not insert user: ")
-		// return
+		return nil, err
 	}
-	return result
+	return result, nil
 }
 
 // PrintUsers prints users from the database.
-func PrintUsers() entity.Users {
+func PrintUsers() (entity.Users, error) {
+	var users entity.Users
 	collection := DBConnect()
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
 	cursor, err := collection.Find(ctx, bson.M{})
 	if err != nil {
-		//controller.ErrorHelper(w, err, "could not find users. Error: ")
+		return users, err
 	}
 	defer cursor.Close(ctx)
-	users := retrieveUsers(ctx, cursor)
-	return users
+	users, err = retrieveUsers(ctx, cursor)
+	return users, err
 }
 
 // retrieveUsers retrieves users and return them.
-func retrieveUsers(ctx context.Context, cursor *mongo.Cursor) entity.Users {
+func retrieveUsers(ctx context.Context, cursor *mongo.Cursor) (entity.Users, error) {
 	var users entity.Users
 	for cursor.Next(ctx) {
 		var user entity.User
 		err := cursor.Decode(&user)
 		if err != nil {
-			// controller.ErrorHelper(w, err, "could not decode into oneUser in printUsers(): ")
+			return users, err
 		}
 		users = append(users, user)
 	}
 	if err := cursor.Err(); err != nil {
-		// controller.ErrorHelper(w, err, "cursor error message: ")
+		return users, err
 	}
-	return users
+	return users, nil
 }
 
 // FindUser gets a user from the database.
-func FindUser(id primitive.ObjectID) entity.User {
+func FindUser(id primitive.ObjectID) (entity.User, error) {
+	var user entity.User
 	collection := DBConnect()
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
 	idDoc := bson.M{"_id": id}
 	res := collection.FindOne(ctx, idDoc)
 	if res.Err() != nil {
-		//controller.ErrorHelper(w, err, "could not find specific user: ")
-		//return
+		return user, res.Err()
 	}
-	var user entity.User
 	err := res.Decode(&user)
 	if err != nil {
-		//controller.ErrorHelper(w, err, "could not decode specific user: ")
-		//return
+		return user, err
 	}
-	return user
+	return user, nil
 }
 
 // DeleteUser deletes a specific user from the database.
-func DeleteUser(id primitive.ObjectID) {
+func DeleteUser(id primitive.ObjectID) error {
 	collection := DBConnect()
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
 	idDoc := bson.M{"_id": id}
 	_, err := collection.DeleteOne(ctx, idDoc)
 	if err != nil {
-		//controller.ErrorHelper(w, err, "could not delete specific user: ")
-		return
+		return err
 	}
+	return nil
 }
