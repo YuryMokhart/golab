@@ -10,10 +10,10 @@ import (
 )
 
 type mongoModeller interface {
-	createUser(entity.User) *mongo.InsertOneResult
-	printUsers() entity.Users
-	// findUser()
-	// deleteUser()
+	CreateUser(entity.User) *mongo.InsertOneResult
+	PrintUsers() entity.Users
+	FindUser(primitive.ObjectID) entity.User
+	DeleteUser(primitive.ObjectID)
 }
 
 // CreateUser creates a user.

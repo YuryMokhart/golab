@@ -10,6 +10,14 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+// Controller interface.
+type Controller interface {
+	CreateUser(http.ResponseWriter, *http.Request)
+	PrintUsers(http.ResponseWriter, *http.Request)
+	FindUser(http.ResponseWriter, *http.Request)
+	DeleteUser(http.ResponseWriter, *http.Request)
+}
+
 // CreateUser creates a user.
 func CreateUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -17,6 +25,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
 		ErrorHelper(w, err, "couldn't encode user in createUser")
+		return
 	}
 	result := mongo.CreateUser(&user)
 	err = json.NewEncoder(w).Encode(result)
@@ -33,15 +42,17 @@ func PrintUsers(w http.ResponseWriter, r *http.Request) {
 	err := json.NewEncoder(w).Encode(&users)
 	if err != nil {
 		ErrorHelper(w, err, "couldn't encode users in printUsers")
+		return
 	}
 	users = mongo.PrintUsers()
 	err = json.NewEncoder(w).Encode(users)
 	if err != nil {
 		ErrorHelper(w, err, "couldn't encode users in printUsers")
+		return
 	}
 }
 
-// FindUser fins a specific user by id.
+// FindUser finds a specific user by id.
 func FindUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	vars := mux.Vars(r)
@@ -52,6 +63,10 @@ func FindUser(w http.ResponseWriter, r *http.Request) {
 	}
 	user := mongo.FindUser(id)
 	err = json.NewEncoder(w).Encode(user)
+	if err != nil {
+		ErrorHelper(w, err, "couldn't encode users in findUsers")
+		return
+	}
 }
 
 // DeleteUser deletes a specific user.
