@@ -12,13 +12,13 @@ import (
 
 // Controller interface.
 type Controller interface {
-	CreateUser(http.ResponseWriter, *http.Request)
-	PrintUsers(http.ResponseWriter, *http.Request)
-	FindUser(http.ResponseWriter, *http.Request)
-	DeleteUser(http.ResponseWriter, *http.Request)
+	// CreateUser(http.ResponseWriter, *http.Request)
+	// PrintUsers(http.ResponseWriter, *http.Request)
+	// FindUser(http.ResponseWriter, *http.Request)
+	// DeleteUser(http.ResponseWriter, *http.Request)
 }
 
-// ControllerStruct.
+// ControllerStruct .
 type ControllerStruct struct {
 	m mongo.ModelMongo
 }

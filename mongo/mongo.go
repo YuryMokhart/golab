@@ -10,8 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// MongoModeller interface.
-type MongoModeller interface {
+type modeller interface {
 	CreateUser(entity.User) (*mongo.InsertOneResult, error)
 	PrintUsers() (entity.Users, error)
 	FindUser(primitive.ObjectID) (entity.User, error)
