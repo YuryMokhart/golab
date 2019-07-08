@@ -18,8 +18,14 @@ type Controller interface {
 	DeleteUser(http.ResponseWriter, *http.Request)
 }
 
+// ControllerStruct.
+type ControllerStruct struct {
+	m mongo.ModelMongo
+}
+
 // CreateUser creates a user.
 func CreateUser(w http.ResponseWriter, r *http.Request) {
+	var c ControllerStruct
 	w.Header().Set("Content-Type", "application/json")
 	var user entity.User
 	err := json.NewDecoder(r.Body).Decode(&user)
@@ -27,7 +33,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		ErrorHelper(w, err, "couldn't encode user in createUser")
 		return
 	}
-	result, err := mongo.CreateUser(&user)
+	result, err := c.m.CreateUser(&user)
 	if err != nil {
 		return
 	}
@@ -40,6 +46,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 
 // PrintUsers prints all users.
 func PrintUsers(w http.ResponseWriter, r *http.Request) {
+	var c ControllerStruct
 	w.Header().Set("Content-Type", "application/json")
 	var users entity.Users
 	err := json.NewEncoder(w).Encode(&users)
@@ -47,7 +54,7 @@ func PrintUsers(w http.ResponseWriter, r *http.Request) {
 		ErrorHelper(w, err, "couldn't encode users in printUsers")
 		return
 	}
-	users, err = mongo.PrintUsers()
+	users, err = c.m.PrintUsers()
 	if err != nil {
 		return
 	}
@@ -60,6 +67,7 @@ func PrintUsers(w http.ResponseWriter, r *http.Request) {
 
 // FindUser finds a specific user by id.
 func FindUser(w http.ResponseWriter, r *http.Request) {
+	var c ControllerStruct
 	w.Header().Set("Content-Type", "application/json")
 	vars := mux.Vars(r)
 	id, err := primitive.ObjectIDFromHex(vars["id"])
@@ -67,7 +75,7 @@ func FindUser(w http.ResponseWriter, r *http.Request) {
 		ErrorHelper(w, err, "hex string is not valid ObjectID: ")
 		return
 	}
-	user, err := mongo.FindUser(id)
+	user, err := c.m.FindUser(id)
 	err = json.NewEncoder(w).Encode(user)
 	if err != nil {
 		ErrorHelper(w, err, "couldn't encode users in findUsers")
@@ -77,6 +85,7 @@ func FindUser(w http.ResponseWriter, r *http.Request) {
 
 // DeleteUser deletes a specific user.
 func DeleteUser(w http.ResponseWriter, r *http.Request) {
+	var c ControllerStruct
 	w.Header().Set("Content-Type", "application/json")
 	vars := mux.Vars(r)
 	id, err := primitive.ObjectIDFromHex(vars["id"])
@@ -84,7 +93,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 		ErrorHelper(w, err, "hex string is not valid ObjectID: ")
 		return
 	}
-	err = mongo.DeleteUser(id)
+	err = c.m.DeleteUser(id)
 	if err != nil {
 		return
 	}
