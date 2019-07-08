@@ -23,11 +23,6 @@ func CreateUser(user *entity.User) *mongo.InsertOneResult {
 	if err != nil {
 		// return nil
 	}
-	// err = json.NewEncoder(w).Encode(result)
-	// if err != nil {
-	// 	ErrorHelper(w, err, "could not encode oneUser in createUser(): ")
-	// 	return
-	// }
 	return result
 }
 
