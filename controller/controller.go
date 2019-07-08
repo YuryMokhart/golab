@@ -1,13 +1,12 @@
 package controller
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/YuryMokhart/golab/entity"
-	"github.com/YuryMokhart/golab/mongo"
-	"github.com/gorilla/mux"
+	mongodb "github.com/YuryMokhart/golab/mongo"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // Controller interface.
@@ -19,73 +18,41 @@ type Controller interface {
 }
 
 // CreateUser creates a user.
-func CreateUser(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	var user entity.User
-	err := json.NewDecoder(r.Body).Decode(&user)
+func CreateUser(user *entity.User) *mongo.InsertOneResult {
+	result, err := mongodb.CreateUser(&user)
 	if err != nil {
-		ErrorHelper(w, err, "couldn't encode user in createUser")
-		return
+		// return nil
 	}
-	result, err := mongo.CreateUser(&user)
-	if err != nil {
-		return
-	}
-	err = json.NewEncoder(w).Encode(result)
-	if err != nil {
-		ErrorHelper(w, err, "could not encode oneUser in createUser(): ")
-		return
-	}
+	// err = json.NewEncoder(w).Encode(result)
+	// if err != nil {
+	// 	ErrorHelper(w, err, "could not encode oneUser in createUser(): ")
+	// 	return
+	// }
+	return result
 }
 
 // PrintUsers prints all users.
-func PrintUsers(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	var users entity.Users
-	err := json.NewEncoder(w).Encode(&users)
+func PrintUsers() *entity.Users {
+	users, err := mongodb.PrintUsers()
 	if err != nil {
-		ErrorHelper(w, err, "couldn't encode users in printUsers")
-		return
+		// return
 	}
-	users, err = mongo.PrintUsers()
-	if err != nil {
-		return
-	}
-	err = json.NewEncoder(w).Encode(users)
-	if err != nil {
-		ErrorHelper(w, err, "couldn't encode users in printUsers")
-		return
-	}
+	return &users
 }
 
 // FindUser finds a specific user by id.
-func FindUser(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	vars := mux.Vars(r)
-	id, err := primitive.ObjectIDFromHex(vars["id"])
+func FindUser(id primitive.ObjectID) entity.User {
+	user, err := mongodb.FindUser(&id)
 	if err != nil {
-		ErrorHelper(w, err, "hex string is not valid ObjectID: ")
-		return
+		// return nil
 	}
-	user, err := mongo.FindUser(id)
-	err = json.NewEncoder(w).Encode(user)
-	if err != nil {
-		ErrorHelper(w, err, "couldn't encode users in findUsers")
-		return
-	}
+	return user
 }
 
 // DeleteUser deletes a specific user.
-func DeleteUser(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	vars := mux.Vars(r)
-	id, err := primitive.ObjectIDFromHex(vars["id"])
+func DeleteUser(id primitive.ObjectID) {
+	err := mongodb.DeleteUser(id)
 	if err != nil {
-		ErrorHelper(w, err, "hex string is not valid ObjectID: ")
-		return
-	}
-	err = mongo.DeleteUser(id)
-	if err != nil {
-		return
+		// return
 	}
 }

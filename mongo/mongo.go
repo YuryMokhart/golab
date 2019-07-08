@@ -18,7 +18,7 @@ type mongoModeller interface {
 }
 
 // CreateUser creates a user.
-func CreateUser(user *entity.User) (*mongo.InsertOneResult, error) {
+func CreateUser(user **entity.User) (*mongo.InsertOneResult, error) {
 	collection := DBConnect()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
@@ -62,7 +62,7 @@ func retrieveUsers(ctx context.Context, cursor *mongo.Cursor) (entity.Users, err
 }
 
 // FindUser gets a user from the database.
-func FindUser(id primitive.ObjectID) (entity.User, error) {
+func FindUser(id *primitive.ObjectID) (entity.User, error) {
 	var user entity.User
 	collection := DBConnect()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
