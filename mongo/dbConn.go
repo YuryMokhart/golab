@@ -13,6 +13,7 @@ import (
 func DBConnect() *mongo.Collection {
 	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://localhost:27017"))
 	if err != nil {
+		// TODO: who is responsible for fatalling?
 		log.Fatalf("could not connect mongoDB to a new client: %s\n", err)
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)

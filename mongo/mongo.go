@@ -24,7 +24,9 @@ type ModelMongo struct {
 
 // CreateUser creates a user.
 func (mm *ModelMongo) CreateUser(user *entity.User) (*mongo.InsertOneResult, error) {
+	// TODO: who is responsible for DB connection?
 	mm.Collection = DBConnect()
+	// TODO: you have context in http layer.
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	result, err := mm.Collection.InsertOne(ctx, user)
@@ -51,6 +53,7 @@ func (mm *ModelMongo) PrintUsers() (entity.Users, error) {
 
 // retrieveUsers retrieves users and return them.
 func retrieveUsers(ctx context.Context, cursor *mongo.Cursor) (entity.Users, error) {
+	// TODO: in the case in Mongo layer when you handle more than one error in function, you should wrap the errors.
 	var users entity.Users
 	for cursor.Next(ctx) {
 		var user entity.User

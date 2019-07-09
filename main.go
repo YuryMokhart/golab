@@ -10,6 +10,7 @@ import (
 func main() {
 	r, err := handlers.Router()
 	if err != nil {
+		// TODO: don't forget to wrap your error
 		log.Fatal(err)
 	}
 	err = http.ListenAndServe(":8080", r)

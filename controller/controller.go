@@ -1,13 +1,17 @@
 package controller
 
 import (
+	"fmt"
+
 	"github.com/YuryMokhart/golab/entity"
 	"github.com/YuryMokhart/golab/mongo"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	mongoDriver "go.mongodb.org/mongo-driver/mongo"
 )
 
+// TODO: you need that interface, but not in the controller.
 type controller interface {
+	// TODO: controller layer should do not know about mongo package.
 	CreateUser(entity.User) *mongoDriver.InsertOneResult
 	PrintUsers(entity.Users) entity.Users
 	FindUser(primitive.ObjectID) entity.User
@@ -20,9 +24,13 @@ type ControllerStruct struct {
 }
 
 // CreateUser creates a user.
-func (c ControllerStruct) CreateUser(user entity.User) *mongoDriver.InsertOneResult {
-	result, _ := c.m.CreateUser(&user)
-	return result
+func (c ControllerStruct) CreateUser(user entity.User) (*mongoDriver.InsertOneResult, error) {
+	result, err := c.m.CreateUser(&user)
+	if err != nil {
+		// TODO: do the same with error in other controllers.
+		return nil, fmt.Errorf("could not create a new user: %s", err)
+	}
+	return result, nil
 }
 
 // PrintUsers returns all users from the database.
