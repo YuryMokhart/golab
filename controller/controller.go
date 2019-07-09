@@ -12,13 +12,13 @@ import (
 
 // Controller interface.
 type Controller interface {
-	// CreateUser(http.ResponseWriter, *http.Request)
-	// PrintUsers(http.ResponseWriter, *http.Request)
-	// FindUser(http.ResponseWriter, *http.Request)
-	// DeleteUser(http.ResponseWriter, *http.Request)
+	// 	CreateUser()
+	PrintUsers(entity.Users) entity.Users
+	// FindUser()
+	// DeleteUser()
 }
 
-// ControllerStruct .
+// ControllerStruct struct.
 type ControllerStruct struct {
 	m mongo.ModelMongo
 }
@@ -45,24 +45,25 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 // PrintUsers prints all users.
-func PrintUsers(w http.ResponseWriter, r *http.Request) {
-	var c ControllerStruct
-	w.Header().Set("Content-Type", "application/json")
-	var users entity.Users
-	err := json.NewEncoder(w).Encode(&users)
+func (c ControllerStruct) PrintUsers(users entity.Users) entity.Users {
+	// var c ControllerStruct
+	// w.Header().Set("Content-Type", "application/json")
+	// var users entity.Users
+	// err := json.NewEncoder(w).Encode(&users)
+	// if err != nil {
+	// 	ErrorHelper(w, err, "couldn't encode users in printUsers")
+	// 	return
+	// }
+	users, err := c.m.PrintUsers()
 	if err != nil {
-		ErrorHelper(w, err, "couldn't encode users in printUsers")
-		return
+		// return
 	}
-	users, err = c.m.PrintUsers()
-	if err != nil {
-		return
-	}
-	err = json.NewEncoder(w).Encode(users)
-	if err != nil {
-		ErrorHelper(w, err, "couldn't encode users in printUsers")
-		return
-	}
+	return users
+	// err = json.NewEncoder(w).Encode(users)
+	// if err != nil {
+	// 	ErrorHelper(w, err, "couldn't encode users in printUsers")
+	// 	return
+	// }
 }
 
 // FindUser finds a specific user by id.
