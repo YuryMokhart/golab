@@ -12,7 +12,6 @@ import (
 
 func main() {
 	collection := mongo.DBConnect()
-	// mod := mongo.ModelMongo{Collection: collection}
 	var mi mongo.Modeller
 	model, ok := mi.(mongo.ModelMongo)
 	model.Collection = collection

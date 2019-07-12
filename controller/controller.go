@@ -10,6 +10,7 @@ import (
 )
 
 // TODO: you need that interface, but not in the controller.
+// Controller represents what methods it should contain.
 type Controller interface {
 	// TODO: controller layer should not know about mongo package.
 	CreateUser(entity.User) (*mongoDriver.InsertOneResult, error)

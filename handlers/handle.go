@@ -9,22 +9,12 @@ import (
 	"github.com/YuryMokhart/golab/entity"
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// TODO: think about exporting.
 // HTTPHandler represents HTTPHandler struct.
 type HTTPHandler struct {
 	// TODO: your http layer knows about controller. Oh my God!
 	H controller.ControllerStruct
-}
-
-type Controller interface {
-	// TODO: controller layer should do not know about mongo package.
-	CreateUser(entity.User) (*mongo.InsertOneResult, error)
-	PrintUsers() (entity.Users, error)
-	FindUser(primitive.ObjectID) (entity.User, error)
-	DeleteUser(primitive.ObjectID) error
 }
 
 // Router registers a new route with a matcher.
@@ -42,26 +32,26 @@ func Router(httphandler HTTPHandler) (*mux.Router, error) {
 	return r, nil
 }
 
+// TODO: you don't need it.
 func (h HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path == "/users" && r.Method == http.MethodGet {
 		h.printHandler(w, r)
+	} else if r.URL.Path == "/user/{id}" && r.Method == http.MethodGet {
+		h.findHandler(w, r)
+	} else if r.URL.Path == "/user/{id}" && r.Method == http.MethodDelete {
+		h.deleteHandler(w, r)
+	} else if r.URL.Path == "/user" && r.Method == http.MethodPost {
+		h.postHandler(w, r)
 	}
-	// } else if r.URL.Path == "/user/{id}" && r.Method == http.MethodGet {
-	// 	h.findHandler(w, r)
-	// } else if r.URL.Path == "/user/{id}" && r.Method == http.MethodDelete {
-	// 	h.deleteHandler(w, r)
-	// } else if r.URL.Path == "/user" && r.Method == http.MethodPost {
-	// 	h.postHandler(w, r)
-	// }
+	// TODO: what will be here?
 }
 
-func (hh HTTPHandler) printHandler(w http.ResponseWriter, r *http.Request) {
+func (h HTTPHandler) printHandler(w http.ResponseWriter, r *http.Request) {
 	// var hh HTTPHandler
 	w.Header().Set("Content-Type", "application/json")
-	users, err := hh.H.PrintUsers()
+	users, err := h.H.PrintUsers()
 	if err != nil {
 		errorHelper(w, err, "could not print a user")
-
 		return
 	}
 	err = json.NewEncoder(w).Encode(users)
@@ -71,8 +61,8 @@ func (hh HTTPHandler) printHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func postHandler(w http.ResponseWriter, r *http.Request) {
-	var hh HTTPHandler
+func (h HTTPHandler) postHandler(w http.ResponseWriter, r *http.Request) {
+	// var hh HTTPHandler
 	w.Header().Set("Content-Type", "application/json")
 	var user entity.User
 	err := json.NewDecoder(r.Body).Decode(&user)
@@ -80,7 +70,7 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 		errorHelper(w, err, "could not send a user due to the problem with decoding it")
 		return
 	}
-	result, err := hh.H.CreateUser(user)
+	result, err := h.H.CreateUser(user)
 	if err != nil {
 		errorHelper(w, err, "could not create a user")
 		return
@@ -92,8 +82,8 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func findHandler(w http.ResponseWriter, r *http.Request) {
-	var hh HTTPHandler
+func (h HTTPHandler) findHandler(w http.ResponseWriter, r *http.Request) {
+	// var hh HTTPHandler
 	w.Header().Set("Content-Type", "application/json")
 	vars := mux.Vars(r)
 	id, err := primitive.ObjectIDFromHex(vars["id"])
@@ -101,7 +91,7 @@ func findHandler(w http.ResponseWriter, r *http.Request) {
 		errorHelper(w, err, "id is not valid")
 		return
 	}
-	user, err := hh.H.FindUser(id)
+	user, err := h.H.FindUser(id)
 	if err != nil {
 		errorHelper(w, err, "could not find a user")
 		return
@@ -113,8 +103,8 @@ func findHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func deleteHandler(w http.ResponseWriter, r *http.Request) {
-	var hh HTTPHandler
+func (h HTTPHandler) deleteHandler(w http.ResponseWriter, r *http.Request) {
+	// var hh HTTPHandler
 	w.Header().Set("Content-Type", "application/json")
 	vars := mux.Vars(r)
 	id, err := primitive.ObjectIDFromHex(vars["id"])
@@ -122,7 +112,7 @@ func deleteHandler(w http.ResponseWriter, r *http.Request) {
 		errorHelper(w, err, "id is not valid")
 		return
 	}
-	err = hh.H.DeleteUser(id)
+	err = h.H.DeleteUser(id)
 	if err != nil {
 		errorHelper(w, err, "could not delete a user")
 		return
@@ -132,12 +122,12 @@ func deleteHandler(w http.ResponseWriter, r *http.Request) {
 func errorHelper(w http.ResponseWriter, err error, message string) {
 	w.WriteHeader(http.StatusInternalServerError)
 	type customError struct {
-		msg string
-		err error
+		Msg string `json:"msg"`
+		Err error  `json:"err"`
 	}
 	ce := customError{
-		msg: message,
-		err: err,
+		Msg: message,
+		Err: err,
 	}
 	err = json.NewEncoder(w).Encode(ce)
 	if err != nil {
