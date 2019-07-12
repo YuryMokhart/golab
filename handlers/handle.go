@@ -16,27 +16,42 @@ import (
 // HTTPHandler type.
 type HTTPHandler struct {
 	// TODO: your http layer knows about controller. Oh my God!
-	h controller.ControllerStruct
+	H controller.ControllerStruct
 }
 
 // Router registers a new route with a matcher.
-func Router() (*mux.Router, error) {
+func Router(httphandler HTTPHandler) (*mux.Router, error) {
 	r := mux.NewRouter()
-	// TODO: change the naming chain: printHandler...
 	r.HandleFunc("/users", printHandler).Methods(http.MethodGet)
 	r.HandleFunc("/user", postHandler).Methods(http.MethodPost)
 	r.HandleFunc("/user/{id}", findHandler).Methods(http.MethodGet)
 	r.HandleFunc("/user/{id}", deleteHandler).Methods(http.MethodDelete)
+	// r.Handle("/users", httphandler)
+	// r.Handle("/user/{id}", httphandler).Methods(http.MethodGet)
+	// r.Handle("/user/{id}", httphandler).Methods(http.MethodDelete)
+	// r.Handle("/user", httphandler)
 
 	return r, nil
 }
+
+// func (h HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+// 	if r.URL.Path == "/users" && r.Method == http.MethodGet {
+// 		h.printHandler(w, r)
+// 	} else if r.URL.Path == "/user/{id}" && r.Method == http.MethodGet {
+// 		h.findHandler(w, r)
+// 	} else if r.URL.Path == "/user/{id}" && r.Method == http.MethodDelete {
+// 		h.deleteHandler(w, r)
+// 	} else if r.URL.Path == "/user" && r.Method == http.MethodPost {
+// 		h.postHandler(w, r)
+// 	}
+// }
 
 func printHandler(w http.ResponseWriter, r *http.Request) {
 	var hh HTTPHandler
 	// TODO: think about content type for errors.
 	w.Header().Set("Content-Type", "application/json")
 	// TODO: where is your error, man?
-	users, err := hh.h.PrintUsers()
+	users, err := hh.H.PrintUsers()
 	if err != nil {
 		helpers.ErrorHelper(w, err, "could not print a user")
 
@@ -60,7 +75,7 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 		helpers.ErrorHelper(w, err, "couldn't decode a user in postHandler")
 		return
 	}
-	result, err := hh.h.CreateUser(user)
+	result, err := hh.H.CreateUser(user)
 	if err != nil {
 		helpers.ErrorHelper(w, err, "could not create a user")
 		return
@@ -81,7 +96,7 @@ func findHandler(w http.ResponseWriter, r *http.Request) {
 		helpers.ErrorHelper(w, err, "hex string is not valid ObjectID in findHandler")
 		return
 	}
-	user, err := hh.h.FindUser(id)
+	user, err := hh.H.FindUser(id)
 	if err != nil {
 		helpers.ErrorHelper(w, err, "could not find a user")
 		return
@@ -102,7 +117,7 @@ func deleteHandler(w http.ResponseWriter, r *http.Request) {
 		helpers.ErrorHelper(w, err, "hex string is not valid ObjectID in deleteHandler")
 		return
 	}
-	err = hh.h.DeleteUser(id)
+	err = hh.H.DeleteUser(id)
 	if err != nil {
 		helpers.ErrorHelper(w, err, "could not delete a user")
 		return

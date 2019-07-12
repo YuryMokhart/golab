@@ -2,6 +2,7 @@ package mongo
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/YuryMokhart/golab/entity"
@@ -10,8 +11,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type modeller interface {
-	CreateUser(entity.User) (*mongo.InsertOneResult, error)
+type Modeller interface {
+	CreateUser(*entity.User) (*mongo.InsertOneResult, error)
 	PrintUsers() (entity.Users, error)
 	FindUser(primitive.ObjectID) (entity.User, error)
 	DeleteUser(primitive.ObjectID) error
@@ -59,12 +60,12 @@ func retrieveUsers(ctx context.Context, cursor *mongo.Cursor) (entity.Users, err
 		var user entity.User
 		err := cursor.Decode(&user)
 		if err != nil {
-			return users, err
+			return users, fmt.Errorf("could not decode current document from the database into user during retrieving users: %s", err)
 		}
 		users = append(users, user)
 	}
 	if err := cursor.Err(); err != nil {
-		return users, err
+		return users, fmt.Errorf("cursor error occured during retrieving users: %s", err)
 	}
 	return users, nil
 }
