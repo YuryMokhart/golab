@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -11,12 +12,17 @@ import (
 
 func main() {
 	collection := mongo.DBConnect()
-	mod := mongo.ModelMongo{Collection: collection}
-	contr := controller.ControllerStruct{M: mod}
-	httphandler := handlers.HTTPHandler{H: contr}
-	// var modelInterface controller.Modeller
-	// var controllerInterface controller.Controller
-	// trying, ok := modelInterface.(controllerInterface)
+	// mod := mongo.ModelMongo{Collection: collection}
+	var mi mongo.Modeller
+	model, ok := mi.(mongo.ModelMongo)
+	model.Collection = collection
+	fmt.Println(model, ok)
+	var ci controller.Controller
+	control, ok := ci.(controller.ControllerStruct)
+	control.M = model
+	fmt.Println(control, ok)
+	httphandler := handlers.HTTPHandler{H: control}
+	fmt.Println(httphandler)
 	r, err := handlers.Router(httphandler)
 	if err != nil {
 		log.Fatalf("could not register a new route %s", err)

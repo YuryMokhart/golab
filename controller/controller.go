@@ -9,23 +9,16 @@ import (
 	mongoDriver "go.mongodb.org/mongo-driver/mongo"
 )
 
-type Modeller interface {
-	CreateUser(*entity.User) (*mongoDriver.InsertOneResult, error)
-	PrintUsers() (entity.Users, error)
-	FindUser(primitive.ObjectID) (entity.User, error)
-	DeleteUser(primitive.ObjectID) error
-}
-
 // TODO: you need that interface, but not in the controller.
 type Controller interface {
-	// TODO: controller layer should do not know about mongo package.
+	// TODO: controller layer should not know about mongo package.
 	CreateUser(entity.User) (*mongoDriver.InsertOneResult, error)
 	PrintUsers() (entity.Users, error)
 	FindUser(primitive.ObjectID) (entity.User, error)
 	DeleteUser(primitive.ObjectID) error
 }
 
-// ControllerStruct struct.
+// ControllerStruct represents a controller struct.
 type ControllerStruct struct {
 	M mongo.ModelMongo
 }
@@ -34,7 +27,6 @@ type ControllerStruct struct {
 func (c ControllerStruct) CreateUser(user entity.User) (*mongoDriver.InsertOneResult, error) {
 	result, err := c.M.CreateUser(&user)
 	if err != nil {
-		// TODO: do the same with error in other controllers.
 		return nil, fmt.Errorf("could not create a new user: %s", err)
 	}
 	return result, nil

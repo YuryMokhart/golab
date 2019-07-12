@@ -18,15 +18,15 @@ type Modeller interface {
 	DeleteUser(primitive.ObjectID) error
 }
 
-// ModelMongo struct.
+// ModelMongo represnts a model struct.
 type ModelMongo struct {
 	Collection *mongo.Collection
 }
 
 // CreateUser creates a user.
-func (mm *ModelMongo) CreateUser(user *entity.User) (*mongo.InsertOneResult, error) {
+func (mm ModelMongo) CreateUser(user *entity.User) (*mongo.InsertOneResult, error) {
 	// TODO: who is responsible for DB connection?
-	mm.Collection = DBConnect()
+	// mm.Collection = DBConnect()
 	// TODO: you have context in http layer.
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
@@ -38,9 +38,9 @@ func (mm *ModelMongo) CreateUser(user *entity.User) (*mongo.InsertOneResult, err
 }
 
 // PrintUsers prints users from the database.
-func (mm *ModelMongo) PrintUsers() (entity.Users, error) {
+func (mm ModelMongo) PrintUsers() (entity.Users, error) {
 	var users entity.Users
-	mm.Collection = DBConnect()
+	// mm.Collection = DBConnect()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	cursor, err := mm.Collection.Find(ctx, bson.M{})
@@ -54,7 +54,6 @@ func (mm *ModelMongo) PrintUsers() (entity.Users, error) {
 
 // retrieveUsers retrieves users and return them.
 func retrieveUsers(ctx context.Context, cursor *mongo.Cursor) (entity.Users, error) {
-	// TODO: in the case in Mongo layer when you handle more than one error in function, you should wrap the errors.
 	var users entity.Users
 	for cursor.Next(ctx) {
 		var user entity.User
@@ -71,9 +70,9 @@ func retrieveUsers(ctx context.Context, cursor *mongo.Cursor) (entity.Users, err
 }
 
 // FindUser gets a user from the database.
-func (mm *ModelMongo) FindUser(id primitive.ObjectID) (entity.User, error) {
+func (mm ModelMongo) FindUser(id primitive.ObjectID) (entity.User, error) {
 	var user entity.User
-	mm.Collection = DBConnect()
+	// mm.Collection = DBConnect()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	idDoc := bson.M{"_id": id}
@@ -89,8 +88,8 @@ func (mm *ModelMongo) FindUser(id primitive.ObjectID) (entity.User, error) {
 }
 
 // DeleteUser deletes a specific user from the database.
-func (mm *ModelMongo) DeleteUser(id primitive.ObjectID) error {
-	mm.Collection = DBConnect()
+func (mm ModelMongo) DeleteUser(id primitive.ObjectID) error {
+	// mm.Collection = DBConnect()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	idDoc := bson.M{"_id": id}
