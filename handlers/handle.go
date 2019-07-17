@@ -11,45 +11,34 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+// Controller represents what methods it should contain.
+type Controller interface {
+	CreateUser(entity.User) error
+	PrintUsers() (entity.Users, error)
+	FindUser() (entity.User, error)
+	DeleteUser() error
+}
+
 // HTTPHandler represents HTTPHandler struct.
 type HTTPHandler struct {
 	// TODO: your http layer knows about controller. Oh my God!
-	H controller.ControllerStruct
+	H controller.Control
 }
 
 // Router registers a new route with a matcher.
-func Router() (*mux.Router, error) {
+func Router(h HTTPHandler) (*mux.Router, error) {
 	r := mux.NewRouter()
-	r.HandleFunc("/users", printHandler).Methods(http.MethodGet)
-	r.HandleFunc("/user", postHandler).Methods(http.MethodPost)
-	r.HandleFunc("/user/{id}", findHandler).Methods(http.MethodGet)
-	r.HandleFunc("/user/{id}", deleteHandler).Methods(http.MethodDelete)
-	// r.Handle("/users", httphandler)
-	// r.Handle("/user/{id}", httphandler).Methods(http.MethodGet)
-	// r.Handle("/user/{id}", httphandler).Methods(http.MethodDelete)
-	// r.Handle("/user", httphandler)
+	r.HandleFunc("/users", h.printHandler).Methods(http.MethodGet)
+	r.HandleFunc("/user", h.postHandler).Methods(http.MethodPost)
+	r.HandleFunc("/user/{id}", h.findHandler).Methods(http.MethodGet)
+	r.HandleFunc("/user/{id}", h.deleteHandler).Methods(http.MethodDelete)
 
 	return r, nil
 }
 
-// // TODO: you don't need it.
-// func (h HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-// 	if r.URL.Path == "/users" && r.Method == http.MethodGet {
-// 		h.printHandler(w, r)
-// 	} else if r.URL.Path == "/user/{id}" && r.Method == http.MethodGet {
-// 		h.findHandler(w, r)
-// 	} else if r.URL.Path == "/user/{id}" && r.Method == http.MethodDelete {
-// 		h.deleteHandler(w, r)
-// 	} else if r.URL.Path == "/user" && r.Method == http.MethodPost {
-// 		h.postHandler(w, r)
-// 	}
-// 	// TODO: what will be here?
-// }
-
-func printHandler(w http.ResponseWriter, r *http.Request) {
-	var h HTTPHandler
+func (h HTTPHandler) printHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	users, err := h.H.PrintUsers()
+	users, err := h.PrintUsers()
 	if err != nil {
 		errorHelper(w, err, "could not print a user")
 		return
@@ -61,8 +50,17 @@ func printHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func postHandler(w http.ResponseWriter, r *http.Request) {
-	var h HTTPHandler
+// PrintUsers prints all users fom the database.
+func (h HTTPHandler) PrintUsers() (entity.Users, error) {
+	users, err := h.H.PrintUsers()
+	fmt.Println("hello")
+	if err != nil {
+		return nil, fmt.Errorf("could not print a user: %s", err)
+	}
+	return users, err
+}
+
+func (h HTTPHandler) postHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var user entity.User
 	err := json.NewDecoder(r.Body).Decode(&user)
@@ -70,28 +68,31 @@ func postHandler(w http.ResponseWriter, r *http.Request) {
 		errorHelper(w, err, "could not send a user due to the problem with decoding it")
 		return
 	}
-	result, err := h.H.CreateUser(user)
+	err = h.H.CreateUser(user)
 	if err != nil {
 		errorHelper(w, err, "could not create a user")
 		return
 	}
-	err = json.NewEncoder(w).Encode(result)
-	if err != nil {
-		errorHelper(w, err, "could not print the result due to the problem with encoding")
-		return
-	}
 }
 
-func findHandler(w http.ResponseWriter, r *http.Request) {
-	var h HTTPHandler
+// func (h HTTPHandler) CreateUser(user entity.User) error {
+// 	err := h.CreateUser(user)
+// 	if err != nil {
+// 		return fmt.Errorf("could not create a user: %s", err)
+// 	}
+// 	return err
+// }
+
+func (h HTTPHandler) findHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	vars := mux.Vars(r)
 	id, err := primitive.ObjectIDFromHex(vars["id"])
+	h.H.M.ID = id
 	if err != nil {
 		errorHelper(w, err, "id is not valid")
 		return
 	}
-	user, err := h.H.FindUser(id)
+	user, err := h.H.FindUser()
 	if err != nil {
 		errorHelper(w, err, "could not find a user")
 		return
@@ -103,16 +104,22 @@ func findHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func deleteHandler(w http.ResponseWriter, r *http.Request) {
-	var h HTTPHandler
+// // FindUser finds a specific user in the database.
+// func (h HTTPHandler) FindUser() (entity.User, error) {
+// 	user, err := h.FindUser()
+// 	return user, err
+// }
+
+func (h HTTPHandler) deleteHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	vars := mux.Vars(r)
 	id, err := primitive.ObjectIDFromHex(vars["id"])
+	h.H.M.ID = id
 	if err != nil {
 		errorHelper(w, err, "id is not valid")
 		return
 	}
-	err = h.H.DeleteUser(id)
+	err = h.H.DeleteUser()
 	if err != nil {
 		errorHelper(w, err, "could not delete a user")
 		return

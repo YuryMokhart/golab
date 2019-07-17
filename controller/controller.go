@@ -5,44 +5,32 @@ import (
 
 	"github.com/YuryMokhart/golab/entity"
 	"github.com/YuryMokhart/golab/mongo"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	mongoDriver "go.mongodb.org/mongo-driver/mongo"
 )
 
-// TODO: you need that interface, but not in the controller.
-// Controller represents what methods it should contain.
-type Controller interface {
-	// TODO: controller layer should not know about mongo package.
-	CreateUser(entity.User) (*mongoDriver.InsertOneResult, error)
-	PrintUsers() (entity.Users, error)
-	FindUser(primitive.ObjectID) (entity.User, error)
-	DeleteUser(primitive.ObjectID) error
-}
-
+// Modeller is a model interface.
 type Modeller interface {
-	CreateUser(*entity.User) (*mongoDriver.InsertOneResult, error)
+	CreateUser(*entity.User) error
 	PrintUsers() (entity.Users, error)
-	FindUser(primitive.ObjectID) (entity.User, error)
-	DeleteUser(primitive.ObjectID) error
+	FindUser() (entity.User, error)
+	DeleteUser() error
 }
 
-// ControllerStruct represents a controller struct.
-type ControllerStruct struct {
+// Control represents a controller struct.
+type Control struct {
 	M mongo.ModelMongo
 }
 
 // CreateUser creates a user.
-func (c ControllerStruct) CreateUser(mod Modeller, user entity.User) (*mongoDriver.InsertOneResult, error) {
-	// var c ControllerStruct
-	result, err := c.M.CreateUser(&user)
+func (c Control) CreateUser(user entity.User) error {
+	err := c.M.CreateUser(user)
 	if err != nil {
-		return nil, fmt.Errorf("could not create a new user: %s", err)
+		return fmt.Errorf("could not create a new user: %s", err)
 	}
-	return result, nil
+	return nil
 }
 
 // PrintUsers returns all users from the database.
-func (c ControllerStruct) PrintUsers() (entity.Users, error) {
+func (c Control) PrintUsers() (entity.Users, error) {
 	users, err := c.M.PrintUsers()
 	if err != nil {
 		return nil, fmt.Errorf("could not print users: %s", err)
@@ -51,8 +39,8 @@ func (c ControllerStruct) PrintUsers() (entity.Users, error) {
 }
 
 // FindUser finds a specific user by id.
-func (c ControllerStruct) FindUser(id primitive.ObjectID) (entity.User, error) {
-	user, err := c.M.FindUser(id)
+func (c Control) FindUser() (entity.User, error) {
+	user, err := c.M.FindUser()
 	if err != nil {
 		return user, fmt.Errorf("could not find a users: %s", err)
 	}
@@ -60,8 +48,8 @@ func (c ControllerStruct) FindUser(id primitive.ObjectID) (entity.User, error) {
 }
 
 // DeleteUser deletes a specific user.
-func (c ControllerStruct) DeleteUser(id primitive.ObjectID) error {
-	err := c.M.DeleteUser(id)
+func (c Control) DeleteUser() error {
+	err := c.M.DeleteUser()
 	if err != nil {
 		return fmt.Errorf("could not delete a users: %s", err)
 	}

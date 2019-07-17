@@ -11,38 +11,31 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// TODO: remember to comment everything.
-type Modeller interface {
-	CreateUser(*entity.User) (*mongo.InsertOneResult, error)
-	PrintUsers() (entity.Users, error)
-	FindUser(primitive.ObjectID) (entity.User, error)
-	DeleteUser(primitive.ObjectID) error
-}
-
 // ModelMongo represnts a model struct.
 type ModelMongo struct {
 	Collection *mongo.Collection
+	ID         primitive.ObjectID
 }
 
 // CreateUser creates a user.
-func (mm *ModelMongo) CreateUser(user *entity.User) (*mongo.InsertOneResult, error) {
+func (mm *ModelMongo) CreateUser(user entity.User) error {
 	// TODO: you have context in http layer.
 	// var mm ModelMongo
-	mm.Collection = DBConnect()
+	// mm.Collection = DBConnect()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	result, err := mm.Collection.InsertOne(ctx, user)
+	_, err := mm.Collection.InsertOne(ctx, user)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return result, nil
+	return nil
 }
 
 // PrintUsers prints users from the database.
 func (mm *ModelMongo) PrintUsers() (entity.Users, error) {
 	var users entity.Users
 	// var mm ModelMongo
-	mm.Collection = DBConnect()
+	// mm.Collection = DBConnect()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	cursor, err := mm.Collection.Find(ctx, bson.M{})
@@ -72,13 +65,14 @@ func retrieveUsers(ctx context.Context, cursor *mongo.Cursor) (entity.Users, err
 }
 
 // FindUser gets a user from the database.
-func (mm *ModelMongo) FindUser(id primitive.ObjectID) (entity.User, error) {
+func (mm *ModelMongo) FindUser() (entity.User, error) {
 	var user entity.User
 	// var mm ModelMongo
-	mm.Collection = DBConnect()
+	// mm.Collection = DBConnect()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	idDoc := bson.M{"_id": id}
+
+	idDoc := bson.M{"_id": mm.ID}
 	res := mm.Collection.FindOne(ctx, idDoc)
 	if res.Err() != nil {
 		return user, res.Err()
@@ -91,12 +85,12 @@ func (mm *ModelMongo) FindUser(id primitive.ObjectID) (entity.User, error) {
 }
 
 // DeleteUser deletes a specific user from the database.
-func (mm *ModelMongo) DeleteUser(id primitive.ObjectID) error {
+func (mm *ModelMongo) DeleteUser() error {
 	// var mm ModelMongo
-	mm.Collection = DBConnect()
+	// mm.Collection = DBConnect()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	idDoc := bson.M{"_id": id}
+	idDoc := bson.M{"_id": mm.ID}
 	_, err := mm.Collection.DeleteOne(ctx, idDoc)
 	if err != nil {
 		return err
