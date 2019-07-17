@@ -19,13 +19,21 @@ type Controller interface {
 	DeleteUser(primitive.ObjectID) error
 }
 
+type Modeller interface {
+	CreateUser(*entity.User) (*mongoDriver.InsertOneResult, error)
+	PrintUsers() (entity.Users, error)
+	FindUser(primitive.ObjectID) (entity.User, error)
+	DeleteUser(primitive.ObjectID) error
+}
+
 // ControllerStruct represents a controller struct.
 type ControllerStruct struct {
 	M mongo.ModelMongo
 }
 
 // CreateUser creates a user.
-func (c ControllerStruct) CreateUser(user entity.User) (*mongoDriver.InsertOneResult, error) {
+func (c ControllerStruct) CreateUser(mod Modeller, user entity.User) (*mongoDriver.InsertOneResult, error) {
+	// var c ControllerStruct
 	result, err := c.M.CreateUser(&user)
 	if err != nil {
 		return nil, fmt.Errorf("could not create a new user: %s", err)
