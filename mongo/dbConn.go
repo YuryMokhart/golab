@@ -9,7 +9,7 @@ import (
 )
 
 // DBConnect connects to the mongo database.
-func DBConnect() *mongo.Collection {
+func DBConnect() *ModelMongo {
 	client, err := mongo.NewClient(options.Client().ApplyURI("mongodb://localhost:27017"))
 	if err != nil {
 		return nil //, fmt.Errorf("could not create a new client to connect to the database: %s", err)
@@ -25,5 +25,5 @@ func DBConnect() *mongo.Collection {
 		return nil //, fmt.Errorf("could not ping if a new client can connect to the database: %s", err)
 	}
 	collection := client.Database("tournament").Collection("user")
-	return collection //, nil
+	return &ModelMongo{Collection: collection} //, nil
 }
