@@ -3,11 +3,11 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/YuryMokhart/golab/entity"
 	"github.com/gorilla/mux"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // Controller represents what methods it should contain.
@@ -88,11 +88,15 @@ func (h HTTPHandler) CreateUser(user entity.User) error {
 
 func (h HTTPHandler) findHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	vars := mux.Vars(r)
-	id, err := primitive.ObjectIDFromHex(vars["id"])
-	_ = id
+	// vars := mux.Vars(r)
+	// id, err := primitive.ObjectIDFromHex(vars["id"])
 	// h.BLogic.
 	// h.C.M.ID = id
+	b, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		errorHelper(w, err, "could not read from the request")
+	}
+	err = json.Unmarshal()
 	if err != nil {
 		errorHelper(w, err, "id is not valid")
 		return
