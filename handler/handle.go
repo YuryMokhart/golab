@@ -3,7 +3,6 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/YuryMokhart/golab/entity"
@@ -14,8 +13,8 @@ import (
 type Controller interface {
 	CreateUser(entity.User) error
 	PrintUsers() (entity.Users, error)
-	FindUser() (entity.User, error)
-	DeleteUser() error
+	FindUser(map[string]string) (entity.User, error)
+	DeleteUser(map[string]string) error
 }
 
 // HTTPHandler represents HTTPHandler struct.
@@ -33,8 +32,8 @@ func Router(h HTTPHandler) (*mux.Router, error) {
 	r := mux.NewRouter()
 	r.HandleFunc("/users", h.printHandler).Methods(http.MethodGet)
 	r.HandleFunc("/user", h.postHandler).Methods(http.MethodPost)
-	// r.HandleFunc("/user/{id}", h.findHandler).Methods(http.MethodGet)
-	// r.HandleFunc("/user/{id}", h.deleteHandler).Methods(http.MethodDelete)
+	r.HandleFunc("/user/{id}", h.findHandler).Methods(http.MethodGet)
+	r.HandleFunc("/user/{id}", h.deleteHandler).Methods(http.MethodDelete)
 
 	return r, nil
 }
@@ -88,20 +87,21 @@ func (h HTTPHandler) CreateUser(user entity.User) error {
 
 func (h HTTPHandler) findHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	// vars := mux.Vars(r)
+	vars := mux.Vars(r)
 	// id, err := primitive.ObjectIDFromHex(vars["id"])
 	// h.BLogic.
 	// h.C.M.ID = id
-	b, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		errorHelper(w, err, "could not read from the request")
-	}
-	err = json.Unmarshal()
-	if err != nil {
-		errorHelper(w, err, "id is not valid")
-		return
-	}
-	user, err := h.FindUser()
+	// b, err := ioutil.ReadAll(r.Body)
+	// fmt.Println(b)
+	// if err != nil {
+	// 	errorHelper(w, err, "could not read from the request")
+	// }
+	// err = json.Unmarshal(b)
+	// if err != nil {
+	// 	errorHelper(w, err, "id is not valid")
+	// 	return
+	// }
+	user, err := h.FindUser(vars)
 	if err != nil {
 		errorHelper(w, err, "could not find a user")
 		return
@@ -114,26 +114,32 @@ func (h HTTPHandler) findHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // FindUser finds a specific user in the database.
-func (h HTTPHandler) FindUser() (entity.User, error) {
-	user, err := h.BLogic.FindUser()
+func (h HTTPHandler) FindUser(vars map[string]string) (entity.User, error) {
+	user, err := h.BLogic.FindUser(vars)
 	return user, err
 }
 
-// func (h HTTPHandler) deleteHandler(w http.ResponseWriter, r *http.Request) {
-// 	w.Header().Set("Content-Type", "application/json")
-// 	vars := mux.Vars(r)
-// 	id, err := primitive.ObjectIDFromHex(vars["id"])
-// 	h.C.M.ID = id
-// 	if err != nil {
-// 		errorHelper(w, err, "id is not valid")
-// 		return
-// 	}
-// 	err = h.C.DeleteUser()
-// 	if err != nil {
-// 		errorHelper(w, err, "could not delete a user")
-// 		return
-// 	}
-// }
+func (h HTTPHandler) deleteHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	vars := mux.Vars(r)
+	// id, err := primitive.ObjectIDFromHex(vars["id"])
+	// h.C.M.ID = id
+	// if err != nil {
+	// 	errorHelper(w, err, "id is not valid")
+	// 	return
+	// }
+	err := h.BLogic.DeleteUser(vars)
+	if err != nil {
+		errorHelper(w, err, "could not delete a user")
+		return
+	}
+}
+
+// DeleteUser finds a specific user in the database.
+func (h HTTPHandler) DeleteUser(vars map[string]string) error {
+	err := h.BLogic.DeleteUser(vars)
+	return err
+}
 
 func errorHelper(w http.ResponseWriter, err error, message string) {
 	w.WriteHeader(http.StatusInternalServerError)

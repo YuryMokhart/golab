@@ -65,14 +65,15 @@ func retrieveUsers(ctx context.Context, cursor *mongo.Cursor) (entity.Users, err
 }
 
 // FindUser gets a user from the database.
-func (mm *ModelMongo) FindUser() (entity.User, error) {
+func (mm *ModelMongo) FindUser(vars map[string]string) (entity.User, error) {
 	var user entity.User
 	// var mm ModelMongo
 	// mm.Collection = DBConnect()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	idDoc := bson.M{"_id": mm.ID}
+	id, _ := primitive.ObjectIDFromHex(vars["id"])
+	idDoc := bson.M{"_id": id}
 	res := mm.Collection.FindOne(ctx, idDoc)
 	if res.Err() != nil {
 		return user, res.Err()
@@ -85,12 +86,13 @@ func (mm *ModelMongo) FindUser() (entity.User, error) {
 }
 
 // DeleteUser deletes a specific user from the database.
-func (mm *ModelMongo) DeleteUser() error {
+func (mm *ModelMongo) DeleteUser(vars map[string]string) error {
 	// var mm ModelMongo
 	// mm.Collection = DBConnect()
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	idDoc := bson.M{"_id": mm.ID}
+	id, _ := primitive.ObjectIDFromHex(vars["id"])
+	idDoc := bson.M{"_id": id}
 	_, err := mm.Collection.DeleteOne(ctx, idDoc)
 	if err != nil {
 		return err

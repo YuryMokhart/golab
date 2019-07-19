@@ -10,8 +10,8 @@ import (
 type DataProvider interface {
 	CreateUser(entity.User) error
 	PrintUsers() (entity.Users, error)
-	FindUser() (entity.User, error)
-	DeleteUser() error
+	FindUser(map[string]string) (entity.User, error)
+	DeleteUser(map[string]string) error
 }
 
 // Control represents a controller struct.
@@ -43,8 +43,8 @@ func (c Control) PrintUsers() (entity.Users, error) {
 }
 
 // FindUser finds a specific user by id.
-func (c Control) FindUser() (entity.User, error) {
-	user, err := c.DB.FindUser()
+func (c Control) FindUser(vars map[string]string) (entity.User, error) {
+	user, err := c.DB.FindUser(vars)
 	if err != nil {
 		return user, fmt.Errorf("could not find a users: %s", err)
 	}
@@ -52,8 +52,8 @@ func (c Control) FindUser() (entity.User, error) {
 }
 
 // DeleteUser deletes a specific user.
-func (c Control) DeleteUser() error {
-	err := c.DB.DeleteUser()
+func (c Control) DeleteUser(vars map[string]string) error {
+	err := c.DB.DeleteUser(vars)
 	if err != nil {
 		return fmt.Errorf("could not delete a users: %s", err)
 	}
