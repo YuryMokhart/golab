@@ -14,7 +14,6 @@ import (
 // ModelMongo represnts a model struct.
 type ModelMongo struct {
 	Collection *mongo.Collection
-	ID         primitive.ObjectID
 }
 
 // CreateUser creates a user.

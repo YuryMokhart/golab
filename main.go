@@ -10,7 +10,10 @@ import (
 )
 
 func main() {
-	db := mongo.DBConnect()
+	db, err := mongo.DBConnect()
+	if err != nil {
+		log.Fatal(err)
+	}
 	controller := controller.New(db)
 	httphandler := handler.New(controller)
 	r, err := handler.Router(httphandler)
